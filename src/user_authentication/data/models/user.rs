@@ -1,34 +1,39 @@
-use serde::Deserialize;
-use validator::{Validate, ValidationError};
+use crate::enums::role::Role;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
+use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Validate)]
-pub struct SignupRequest {
-    #[validate(email)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct User {
+    pub id: Uuid,
     pub email: String,
-
-    #[validate(length(min = 8))]
-    pub password: String,
-
-    #[validate(length(min = 1))]
+    pub password_hash: String,
     pub first_name: String,
-
-    #[validate(length(min = 1))]
     pub last_name: String,
-
     pub role: Role,
+    pub is_email_verified: bool,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub last_login: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
-pub struct VerifyEmailRequest {
-    #[validate(length(equal = 36))] // UUID string
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct EmailVerificationToken {
+    pub id: Uuid,
+    pub user_id: Uuid,
     pub token: String,
+    pub expires_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
-pub struct ResetPasswordRequest {
-    #[validate(length(equal = 36))] // token uuid
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct PasswordResetToken {
+    pub id: Uuid,
+    pub user_id: Uuid,
     pub token: String,
-
-    #[validate(length(min = 8))]
-    pub new_password: String,
+    pub expires_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub used: bool,
 }

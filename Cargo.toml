@@ -1,0 +1,25 @@
+[package]
+name = "security_alert"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid","migrate"] }
+axum = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bcrypt = "0.15"
+jsonwebtoken = "9.2"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+validator = { version = "0.18", features = ["derive"] }
+rand = "0.8"
+lettre = { version = "0.11", features = ["tokio1"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors"] }
+dotenvy = "0.15"
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"

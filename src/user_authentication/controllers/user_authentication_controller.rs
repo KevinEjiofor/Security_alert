@@ -1,6 +1,6 @@
-use crate::domain::dtos::auth_dto::*;
-use crate::domain::errors::AuthError;
-use crate::services::user_authentication::AuthService;
+use crate::dtos::user_authentication_dto::*;
+use crate::utils::auth_error::AuthError;
+use crate::user_authentication::services::user_authentication_service::AuthService;
 use axum::{
     extract::{Json, Query},
     http::{HeaderMap, StatusCode},

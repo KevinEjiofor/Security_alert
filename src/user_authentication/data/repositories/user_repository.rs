@@ -1,6 +1,6 @@
-use crate::domain::entities::user::{User, EmailVerificationToken, PasswordResetToken};
-use crate::domain::errors::AuthError;
-use crate::infrastructure::database::Database;
+use crate::user_authentication::data::models::user::{User, EmailVerificationToken, PasswordResetToken};
+use crate::utils::auth_error::AuthError;
+use crate::config::database::Database;
 use chrono::{DateTime, Utc};
 use sqlx::Row;
 use uuid::Uuid;
