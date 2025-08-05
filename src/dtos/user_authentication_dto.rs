@@ -79,6 +79,7 @@ pub struct AuthResponse {
 
 #[derive(Debug, Serialize)]
 pub struct UserResponse {
+    #[serde(with = "uuid::serde::simple")]
     pub id: Uuid,
     pub email: String,
     pub first_name: String,

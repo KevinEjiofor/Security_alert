@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct User {
+    #[serde(with = "uuid::serde::simple")]
     pub id: Uuid,
     pub email: String,
     pub password_hash: String,
@@ -21,7 +22,9 @@ pub struct User {
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct EmailVerificationToken {
+    #[serde(with = "uuid::serde::simple")]
     pub id: Uuid,
+    #[serde(with = "uuid::serde::simple")]
     pub user_id: Uuid,
     pub token: String,
     pub expires_at: DateTime<Utc>,
@@ -30,7 +33,9 @@ pub struct EmailVerificationToken {
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct PasswordResetToken {
+    #[serde(with = "uuid::serde::simple")]
     pub id: Uuid,
+    #[serde(with = "uuid::serde::simple")]
     pub user_id: Uuid,
     pub token: String,
     pub expires_at: DateTime<Utc>,

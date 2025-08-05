@@ -1,8 +1,13 @@
-use crate::user_authentication::data::models::user::{User, EmailVerificationToken, PasswordResetToken};
-use crate::utils::auth_error::AuthError;
-use crate::config::database::Database;
-use chrono::{DateTime, Utc};
-use sqlx::Row;
+// src/user_authentication/data/repositories/user_repository.rs
+use crate::{
+    config::database::Database,
+    enums::role::Role,
+    user_authentication::data::models::user::{EmailVerificationToken, PasswordResetToken, User},
+    utils::auth_error::AuthError,
+};
+use chrono::Utc;
+use sqlx::postgres::PgArguments;
+use sqlx::Arguments;
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -16,45 +21,50 @@ impl UserRepository {
     }
 
     pub async fn create_user(&self, user: &User) -> Result<User, AuthError> {
-        let row = sqlx::query!(
+        let mut query_args = PgArguments::default();
+        query_args.add(user.id);
+        query_args.add(&user.email);
+        query_args.add(&user.password_hash);
+        query_args.add(&user.first_name);
+        query_args.add(&user.last_name);
+        query_args.add(user.role);
+        query_args.add(user.is_email_verified);
+        query_args.add(user.is_active);
+        query_args.add(user.created_at);
+        query_args.add(user.updated_at);
+
+        let query = sqlx::query_as_with(
             r#"
-            INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_email_verified, is_active, created_at, updated_at)
+            INSERT INTO users
+            (id, email, password_hash, first_name, last_name, role, is_email_verified, is_active, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING *
             "#,
-            user.id,
-            user.email,
-            user.password_hash,
-            user.first_name,
-            user.last_name,
-            user.role as _,
-            user.is_email_verified,
-            user.is_active,
-            user.created_at,
-            user.updated_at
-        )
-            .fetch_one(self.db.get_pool())
-            .await?;
+            query_args,
+        );
 
-        Ok(User {
-            id: row.id,
-            email: row.email,
-            password_hash: row.password_hash,
-            first_name: row.first_name,
-            last_name: row.last_name,
-            role: row.role,
-            is_email_verified: row.is_email_verified,
-            is_active: row.is_active,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-            last_login: row.last_login,
-        })
+        let row = query.fetch_one(self.db.get_pool()).await?;
+        Ok(row)
     }
 
     pub async fn find_by_email(&self, email: &str) -> Result<Option<User>, AuthError> {
         let row = sqlx::query_as!(
             User,
-            "SELECT * FROM users WHERE email = $1",
+            r#"
+            SELECT
+                id,
+                email,
+                password_hash,
+                first_name,
+                last_name,
+                role as "role: Role",
+                is_email_verified,
+                is_active,
+                created_at,
+                updated_at,
+                last_login
+            FROM users WHERE email = $1
+            "#,
             email
         )
             .fetch_optional(self.db.get_pool())
@@ -66,7 +76,21 @@ impl UserRepository {
     pub async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, AuthError> {
         let row = sqlx::query_as!(
             User,
-            "SELECT * FROM users WHERE id = $1",
+            r#"
+            SELECT
+                id,
+                email,
+                password_hash,
+                first_name,
+                last_name,
+                role as "role: Role",
+                is_email_verified,
+                is_active,
+                created_at,
+                updated_at,
+                last_login
+            FROM users WHERE id = $1
+            "#,
             id
         )
             .fetch_optional(self.db.get_pool())
@@ -74,7 +98,6 @@ impl UserRepository {
 
         Ok(row)
     }
-
     pub async fn update_email_verification(&self, user_id: Uuid, verified: bool) -> Result<(), AuthError> {
         sqlx::query!(
             "UPDATE users SET is_email_verified = $1, updated_at = $2 WHERE id = $3",
@@ -222,6 +245,70 @@ impl UserRepository {
         sqlx::query!(
             "DELETE FROM password_reset_tokens WHERE expires_at < $1",
             now
+        )
+            .execute(self.db.get_pool())
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_user(&self, user: &User) -> Result<User, AuthError> {
+        let row = sqlx::query_as!(
+        User,
+        r#"
+        UPDATE users
+        SET
+            email = $2,
+            first_name = $3,
+            last_name = $4,
+            role = $5,
+            is_active = $6,
+            updated_at = $7
+        WHERE id = $1
+        RETURNING
+            id,
+            email,
+            password_hash,
+            first_name,
+            last_name,
+            role as "role: Role",
+            is_email_verified,
+            is_active,
+            created_at,
+            updated_at,
+            last_login
+        "#,
+        user.id,
+        user.email,
+        user.first_name,
+        user.last_name,
+        user.role as Role,
+        user.is_active,
+        Utc::now()
+    )
+            .fetch_one(self.db.get_pool())
+            .await?;
+
+        Ok(row)
+    }
+
+    pub async fn deactivate_user(&self, user_id: Uuid) -> Result<(), AuthError> {
+        sqlx::query!(
+            "UPDATE users SET is_active = false, updated_at = $1 WHERE id = $2",
+            Utc::now(),
+            user_id
+        )
+            .execute(self.db.get_pool())
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn activate_user(&self, user_id: Uuid) -> Result<(), AuthError> {
+        sqlx::query!(
+            "UPDATE users SET is_active = true, updated_at = $1 WHERE id = $2",
+            Utc::now(),
+            user_id
         )
             .execute(self.db.get_pool())
             .await?;

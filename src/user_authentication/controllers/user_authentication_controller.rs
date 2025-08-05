@@ -1,14 +1,17 @@
 use crate::dtos::user_authentication_dto::*;
 use crate::utils::auth_error::AuthError;
+use crate::utils::api_response::ApiResponse;
 use crate::user_authentication::services::user_authentication_service::AuthService;
 use axum::{
-    extract::{Json, Query},
+    extract::{Json},
     http::{HeaderMap, StatusCode},
-    response::{IntoResponse, Response},
+    response::{IntoResponse},
 };
 use serde::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
+
+
 
 #[derive(Clone)]
 pub struct AuthController {
@@ -25,7 +28,11 @@ impl AuthController {
         Json(request): Json<RegisterRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.register(request).await?;
-        Ok((StatusCode::CREATED, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "User registered successfully".to_string(),
+        );
+        Ok((StatusCode::CREATED, Json(api_response)))
     }
 
     pub async fn login(
@@ -33,7 +40,11 @@ impl AuthController {
         Json(request): Json<LoginRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.login(request).await?;
-        Ok((StatusCode::OK, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "Login successful".to_string(),
+        );
+        Ok((StatusCode::OK, Json(api_response)))
     }
 
     pub async fn verify_email(
@@ -41,7 +52,11 @@ impl AuthController {
         Json(request): Json<VerifyEmailRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.verify_email(request).await?;
-        Ok((StatusCode::OK, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "Email verified successfully".to_string(),
+        );
+        Ok((StatusCode::OK, Json(api_response)))
     }
 
     pub async fn resend_verification(
@@ -49,7 +64,11 @@ impl AuthController {
         Json(request): Json<ResendVerificationRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.resend_verification(request).await?;
-        Ok((StatusCode::OK, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "Verification email sent successfully".to_string(),
+        );
+        Ok((StatusCode::OK, Json(api_response)))
     }
 
     pub async fn forgot_password(
@@ -57,7 +76,11 @@ impl AuthController {
         Json(request): Json<ForgotPasswordRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.forgot_password(request).await?;
-        Ok((StatusCode::OK, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "Password reset email sent successfully".to_string(),
+        );
+        Ok((StatusCode::OK, Json(api_response)))
     }
 
     pub async fn reset_password(
@@ -65,7 +88,11 @@ impl AuthController {
         Json(request): Json<ResetPasswordRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.reset_password(request).await?;
-        Ok((StatusCode::OK, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "Password reset successfully".to_string(),
+        );
+        Ok((StatusCode::OK, Json(api_response)))
     }
 
     pub async fn change_password(
@@ -75,7 +102,11 @@ impl AuthController {
     ) -> Result<impl IntoResponse, AuthError> {
         let user_id = self.extract_user_id_from_token(&headers).await?;
         let response = self.auth_service.change_password(user_id, request).await?;
-        Ok((StatusCode::OK, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "Password changed successfully".to_string(),
+        );
+        Ok((StatusCode::OK, Json(api_response)))
     }
 
     pub async fn refresh_token(
@@ -83,7 +114,11 @@ impl AuthController {
         Json(request): Json<RefreshTokenRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.refresh_token(&request.refresh_token).await?;
-        Ok((StatusCode::OK, Json(response)))
+        let api_response = ApiResponse::success_with_message(
+            response,
+            "Token refreshed successfully".to_string(),
+        );
+        Ok((StatusCode::OK, Json(api_response)))
     }
 
     async fn extract_user_id_from_token(&self, headers: &HeaderMap) -> Result<Uuid, AuthError> {
@@ -104,6 +139,7 @@ impl AuthController {
         Ok(user_id)
     }
 }
+
 #[derive(Debug, Deserialize)]
 pub struct RefreshTokenRequest {
     pub refresh_token: String,

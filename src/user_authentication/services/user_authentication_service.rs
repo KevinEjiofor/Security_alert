@@ -1,7 +1,7 @@
 use crate::config::config::Config;
 use crate::dtos::user_authentication_dto::*;
 use crate::user_authentication::data::models::user::{User, EmailVerificationToken, PasswordResetToken};
-use crate::enums::role::Role;
+
 use crate::utils::auth_error::AuthError;
 use crate::config::database::Database;
 use crate::utils::email::EmailService;
@@ -11,9 +11,9 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use uuid::Uuid;
 use validator::Validate;
+use crate::enums::role::Role;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
