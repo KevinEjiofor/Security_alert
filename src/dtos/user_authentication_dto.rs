@@ -54,8 +54,8 @@ pub struct ResetPasswordRequest {
     #[validate(length(min = 6, max = 6, message = "Token must be 6 digits"))]
     pub token: String,
 
-    #[validate(email(message = "Invalid email format"))]
-    pub email: String,
+    // #[validate(email(message = "Invalid email format"))]
+    // pub email: String,
 
     #[validate(length(min = 8, message = "Password must be at least 8 characters"))]
     pub new_password: String,
@@ -74,7 +74,7 @@ pub struct ChangePasswordRequest {
 pub struct AuthResponse {
     pub access_token: String,
     pub refresh_token: String,
-    pub user: UserResponse,
+    // pub user: UserResponse,
 }
 
 #[derive(Debug, Serialize)]

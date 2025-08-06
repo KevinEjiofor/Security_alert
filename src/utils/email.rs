@@ -14,10 +14,20 @@ pub struct EmailService {
 
 impl EmailService {
     pub fn new(config: SmtpConfig) -> Result<Self, AuthError> {
-        let credentials = Credentials::new(config.username, config.password);
+        if config.username.is_empty() {
+            return Err(AuthError::EmailService("SMTP username is empty".to_string()));
+        }
+        if config.password.is_empty() {
+            return Err(AuthError::EmailService("SMTP password is empty".to_string()));
+        }
+        if config.from_email.is_empty() {
+            return Err(AuthError::EmailService("From email is empty".to_string()));
+        }
 
+        let credentials = Credentials::new(config.username.clone(), config.password.clone());
 
-        let mailer = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&config.host)
+        let mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&config.host)
+            .map_err(|e| AuthError::EmailService(format!("Failed to connect to SMTP server: {}", e)))?
             .port(config.port)
             .credentials(credentials)
             .pool_config(PoolConfig::default())
@@ -64,9 +74,9 @@ impl EmailService {
             <body>
                 <h2>Password Reset</h2>
                 <p>Hello {},</p>
-                <p>We received a request to reset your password. Please use the following 6-digit code:</p>
+                <p>We received a request to reset your password. Please use the following 6-digit TOKEN:</p>
                 <h1 style="color: #FF6B6B; text-align: center; letter-spacing: 5px;">{}</h1>
-                <p>This code will expire in 1 hour.</p>
+                <p>This TOKEN will expire in 5 minutes.</p>
                 <p>If you didn't request a password reset, please ignore this email.</p>
                 <br>
                 <p>Best regards,<br>Auth System Team</p>
@@ -82,7 +92,7 @@ impl EmailService {
     async fn send_email(&self, to_email: &str, subject: &str, body: &str) -> Result<(), AuthError> {
         let to_mailbox: Mailbox = to_email
             .parse()
-            .map_err(|e| AuthError::EmailService(format!("Invalid to address: {}", e)))?;
+            .map_err(|e| AuthError::EmailService(format!("Invalid recipient email: {}", e)))?;
 
         let email = Message::builder()
             .from(self.from_mailbox.clone())
@@ -90,12 +100,12 @@ impl EmailService {
             .subject(subject)
             .header(ContentType::TEXT_HTML)
             .body(body.to_string())
-            .map_err(|e| AuthError::EmailService(e.to_string()))?;
+            .map_err(|e| AuthError::EmailService(format!("Failed to build email: {}", e)))?;
 
         self.mailer
             .send(email)
             .await
-            .map_err(|e| AuthError::EmailService(e.to_string()))?;
+            .map_err(|e| AuthError::EmailService(format!("Failed to send email: {}", e)))?;
 
         Ok(())
     }

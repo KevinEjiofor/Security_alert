@@ -72,6 +72,21 @@ impl UserRepository {
 
         Ok(row)
     }
+    pub async fn find_password_reset_token_by_token(&self, token: &str) -> Result<Option<PasswordResetToken>, AuthError> {
+        let row = sqlx::query_as!(
+        PasswordResetToken,
+        r#"
+        SELECT * FROM password_reset_tokens
+        WHERE token = $1 AND expires_at > $2 AND used = false
+        "#,
+        token,
+        Utc::now()
+    )
+            .fetch_optional(self.db.get_pool())
+            .await?;
+
+        Ok(row)
+    }
 
     pub async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, AuthError> {
         let row = sqlx::query_as!(

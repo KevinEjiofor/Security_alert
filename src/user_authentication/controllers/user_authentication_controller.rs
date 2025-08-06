@@ -64,12 +64,18 @@ impl AuthController {
         Json(request): Json<ResendVerificationRequest>,
     ) -> Result<impl IntoResponse, AuthError> {
         let response = self.auth_service.resend_verification(request).await?;
-        let api_response = ApiResponse::success_with_message(
-            response,
-            "Verification email sent successfully".to_string(),
-        );
+
+
+        let message = if response.message == "Email is already verified." {
+            response.message.clone()
+        } else {
+            "Verification email sent successfully".to_string()
+        };
+
+        let api_response = ApiResponse::success_with_message(response, message);
         Ok((StatusCode::OK, Json(api_response)))
     }
+
 
     pub async fn forgot_password(
         &self,

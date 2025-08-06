@@ -109,15 +109,15 @@ impl AuthService {
         Ok(AuthResponse {
             access_token,
             refresh_token,
-            user: UserResponse {
-                id: user.id,
-                email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                role: user.role,
-                is_email_verified: user.is_email_verified,
-                is_active: user.is_active,
-            },
+            // user: UserResponse {
+            //     id: user.id,
+            //     email: user.email,
+            //     first_name: user.first_name,
+            //     last_name: user.last_name,
+            //     role: user.role,
+            //     is_email_verified: user.is_email_verified,
+            //     is_active: user.is_active,
+            // },
         })
     }
 
@@ -170,16 +170,14 @@ impl AuthService {
         }
 
         Ok(MessageResponse {
-            message: "If an account with that email exists, a password reset code has been sent.".to_string(),
+            message: "A password reset TOKEN has been sent to email.".to_string(),
         })
     }
-
     pub async fn reset_password(&self, request: ResetPasswordRequest) -> Result<MessageResponse, AuthError> {
         request.validate().map_err(|e| AuthError::Validation(e.to_string()))?;
 
-
         let reset_token = self.user_repo
-            .find_password_reset_token(&request.email, &request.token)
+            .find_password_reset_token_by_token(&request.token)
             .await?
             .ok_or(AuthError::InvalidToken)?;
 
@@ -187,13 +185,33 @@ impl AuthService {
             .map_err(|e| AuthError::Internal(anyhow::anyhow!(e)))?;
 
         self.user_repo.update_password(reset_token.user_id, &password_hash).await?;
-
         self.user_repo.mark_password_reset_token_used(reset_token.id).await?;
 
         Ok(MessageResponse {
             message: "Password reset successfully.".to_string(),
         })
     }
+
+    // pub async fn reset_password(&self, request: ResetPasswordRequest) -> Result<MessageResponse, AuthError> {
+    //     request.validate().map_err(|e| AuthError::Validation(e.to_string()))?;
+    //
+    //
+    //     let reset_token = self.user_repo
+    //         .find_password_reset_token(&request.email, &request.token)
+    //         .await?
+    //         .ok_or(AuthError::InvalidToken)?;
+    //
+    //     let password_hash = hash(&request.new_password, DEFAULT_COST)
+    //         .map_err(|e| AuthError::Internal(anyhow::anyhow!(e)))?;
+    //
+    //     self.user_repo.update_password(reset_token.user_id, &password_hash).await?;
+    //
+    //     self.user_repo.mark_password_reset_token_used(reset_token.id).await?;
+    //
+    //     Ok(MessageResponse {
+    //         message: "Password reset successfully.".to_string(),
+    //     })
+    // }
 
     pub async fn change_password(&self, user_id: Uuid, request: ChangePasswordRequest) -> Result<MessageResponse, AuthError> {
         request.validate().map_err(|e| AuthError::Validation(e.to_string()))?;
@@ -240,15 +258,15 @@ impl AuthService {
         Ok(AuthResponse {
             access_token,
             refresh_token: new_refresh_token,
-            user: UserResponse {
-                id: user.id,
-                email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                role: user.role,
-                is_email_verified: user.is_email_verified,
-                is_active: user.is_active,
-            },
+            // user: UserResponse {
+            //     id: user.id,
+            //     email: user.email,
+            //     first_name: user.first_name,
+            //     last_name: user.last_name,
+            //     role: user.role,
+            //     is_email_verified: user.is_email_verified,
+            //     is_active: user.is_active,
+            // },
         })
     }
     fn generate_6_digit_token(&self) -> String {
@@ -261,7 +279,7 @@ impl AuthService {
             id: Uuid::new_v4(),
             user_id: user.id,
             token: token.to_string(),
-            expires_at: Utc::now() + Duration::hours(24),
+            expires_at: Utc::now() + Duration::minutes(5),
             created_at: Utc::now(),
         };
 
