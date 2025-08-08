@@ -1,0 +1,8 @@
+target/
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+# Keep the .sqlx directory for offline compilation
+!.sqlx/

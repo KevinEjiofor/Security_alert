@@ -80,7 +80,6 @@ impl CryptoService {
         Ok(general_purpose::STANDARD.encode(encrypted_data))
     }
 
-    /// Decrypts an encrypted token
     pub fn decrypt_token(&self, encrypted_token: &str) -> Result<String, AuthError> {
         let encrypted_data = general_purpose::STANDARD
             .decode(encrypted_token)
